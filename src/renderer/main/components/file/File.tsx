@@ -212,6 +212,10 @@ export default observer(function File() {
           click: uploadFiles,
         },
         {
+          label: t('uploadFolder'),
+          click: uploadFolder,
+        },
+        {
           label: t('newFolder'),
           click: async () => {
             const name = await LunaModal.prompt(t('newFolderName'))
@@ -269,7 +273,34 @@ export default observer(function File() {
 
     await getFiles(path)
   }
+  async function uploadFolder(files?: string[]) {
+    if (!device) {
+      return
+    }
 
+    if (!files) {
+      const { filePaths } = await main.showOpenDialog({
+        properties: ['openDirectory', 'multiSelections'],
+      })
+      if (isEmpty(filePaths)) {
+        return
+      }
+      files = filePaths
+    }
+
+    for (let i = 0, len = files!.length; i < len; i++) {
+      const file = files![i]
+      const { name } = splitPath(file)
+      notify(t('fileUploading', { path: file }), { icon: 'info' })
+      try {
+        await main.pushFile(device.id, file, path + name)
+      } catch {
+        notify(t('uploadFileErr'), { icon: 'error' })
+      }
+    }
+
+    await getFiles(path)
+  }
   async function goCustomPath(p: string) {
     if (!endWith(p, '/')) {
       p = p + '/'
